@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Optional, Any, List
+
 """
 A binary chain consists of a prefix, which is an ascii string (strictly byte of value 0x7F and under)
 plus zero or more binary parts.
@@ -50,7 +52,7 @@ BYTE_LENGTHS_MAP = [
 MAX_LENGTH_SIZE = BYTE_LENGTHS_MAP[-1][0]
 
 
-def create_part_length(length_of_part):
+def create_part_length(length_of_part: int):
     assert isinstance(length_of_part, int)
     if length_of_part < 0:
         raise ValueError("out of range - part_length must be non-negative")
@@ -69,9 +71,9 @@ def create_part_length(length_of_part):
 
 
 class BinaryChain:
-    def __init__(self, prefix: str = "", parts: list[bytes] = None):
+    def __init__(self, prefix: str = "", parts: Optional[list[bytes]] = None):
         self.prefix = prefix
-        self.parts = list() if parts is None else parts
+        self.parts = [] if parts is None else parts
 
     def serialise(self) -> bytes:
         b_prefix = self.prefix.encode("ascii")
@@ -80,8 +82,11 @@ class BinaryChain:
             b_parts.extend([create_part_length(len(part)), part])
         return b"".join(b_parts) + EOC
 
-    def __eq__(self, other: BinaryChain):
-        return self.prefix == other.prefix and self.parts == other.parts
+    def __eq__(self, other: Any):
+        if isinstance(other, BinaryChain):
+            return self.prefix == other.prefix and self.parts == other.parts
+        else:
+            return False
 
     def __repr__(self):
         return f"BinaryChain({repr(self.prefix)}, {repr(self.parts)})"
@@ -90,7 +95,7 @@ class BinaryChain:
         prefix_str = (
             self.prefix if len(self.prefix) <= 100 else self.prefix[:100] + "..."
         )
-        parts = list()
+        parts: List[bytes] = list()
         for part in self.parts[:10]:
             if len(part) <= 10:
                 parts.append(part)
@@ -110,7 +115,7 @@ class StreamingChainReader:
     IN_PART_LENGTH = "IN_PART_LENGTH"
     IN_BINARY_PART = "IN_BINARY_PART"
 
-    def __init__(self, max_part_size, max_chain_size=None, max_chain_length=None):
+    def __init__(self, max_part_size: int, max_chain_size: Optional[int] = None, max_chain_length: Optional[int] = None):
         if max_part_size <= 0:
             raise ValueError("max part size must be positive")
         self.max_part_size = max_part_size
@@ -151,7 +156,7 @@ class StreamingChainReader:
     def complete(self):
         return self._state == self.IN_PREFIX and not self._buffer
 
-    def _set_state_and_part_length_size_from_sop(self, sop_byte):
+    def _set_state_and_part_length_size_from_sop(self, sop_byte: int):
         if sop_byte == EOC_ORD:
             self._part_length_size = None
             self._state = self.IN_PREFIX
@@ -171,8 +176,8 @@ class StreamingChainReader:
         if self._state is self.IN_PREFIX:
             return self._get_prefix()
         elif self._state is self.IN_PART_LENGTH:
-            self._read_part_length()
-            if self._state is self.IN_BINARY_PART:
+            self._read_part_length()  # Note: this can change the self._state
+            if self._state is self.IN_BINARY_PART:  # type: ignore
                 return self._get_binary_part()
             else:
                 return None, False
@@ -193,7 +198,7 @@ class StreamingChainReader:
 
     def _read_part_length(self):
         buffer_len = len(self._buffer)
-        if self._part_length_size == 0:
+        if not self._part_length_size:
             raise RuntimeError("Invalid call")
         if self._part_length_size <= buffer_len:
             encoded_part_length = self._buffer[: self._part_length_size]
@@ -206,6 +211,8 @@ class StreamingChainReader:
         return
 
     def _get_binary_part(self):
+        if self._binary_part_length is None:
+            raise RuntimeError('Invalid call when binary_part_length is None')
         buffer_len = len(self._buffer)
         # include the SOP / EOC character in the length required
         data_length = self._binary_part_length + 1
@@ -223,7 +230,7 @@ class StreamingChainReader:
 
 
 class ChainReader:
-    def __init__(self, max_part_size, max_chain_size, max_chain_length):
+    def __init__(self, max_part_size: int, max_chain_size: int, max_chain_length: int):
         self.max_part_size = max_part_size
         self.max_chain_size = max_chain_size
         self.max_chain_length = max_chain_length
