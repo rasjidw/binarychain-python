@@ -1,16 +1,10 @@
 from __future__ import annotations
 
+from typing import List
+
 import pytest
 
-from binarychain import (
-    BinaryChain,
-    StreamingChainReader,
-    ChainReader,
-    EndOfChainMarker,
-    ZERO_SOP_ORD,
-    EOC_ORD,
-    BYTE_LENGTHS_MAP,
-)
+from binarychain import BinaryChain, ChainReader, ZERO_SOP_ORD, EOC_ORD, BYTE_LENGTHS_MAP
 
 
 @pytest.fixture
@@ -25,7 +19,7 @@ def sample_chains():
     }
 
 
-def test_serialise(sample_chains):
+def test_serialise(sample_chains: dict[str, BinaryChain]):
     assert sample_chains["empty"].serialise() == b"\xFF"
     assert sample_chains["hello"].serialise() == b"Hello\x81\x05World\xFF"
     assert sample_chains["empty_part"].serialise() == b"Empty Part\x80\xFF"
@@ -35,7 +29,7 @@ def test_serialise(sample_chains):
     )
 
 
-def test_deserialse_single(sample_chains):
+def test_deserialse_single(sample_chains: dict[str, BinaryChain]):
     reader = ChainReader(
         max_part_size=1024 * 1024, max_chain_size=1024 * 1024, max_chain_length=10
     )
@@ -61,7 +55,7 @@ def split_into_groups(b: bytes, n: int) -> list[bytes]:
     return [b[i : i + n] for i in range(0, len(b), n)]
 
 
-def test_deserialise_multiple(sample_chains):
+def test_deserialise_multiple(sample_chains: dict[str, BinaryChain]):
     empty = sample_chains["empty"]
     hello = sample_chains["hello"]
     empty_part = sample_chains["empty_part"]
@@ -76,7 +70,7 @@ def test_deserialise_multiple(sample_chains):
     assert chains == back_again
 
     # get the EOT positions
-    eot_indexes = list()
+    eot_indexes: List[int] = list()
     for index, char in enumerate(data):
         if char == EOC_ORD:
             eot_indexes.append(index + 1)
@@ -89,7 +83,7 @@ def test_deserialise_multiple(sample_chains):
         reader = ChainReader(
             max_part_size=1024 * 1024, max_chain_size=1024 * 1024, max_chain_length=10
         )
-        back_again = list()
+        back_again: List[BinaryChain] = list()
         pos = 0
         for chunk in chunks:
             for bc in reader.get_binary_chains(chunk):
