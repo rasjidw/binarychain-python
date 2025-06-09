@@ -1,0 +1,11 @@
+min_version = "4"
+requires = ["tox>=4", "tox-uv>=1"]
+env_list = ["3.13", "3.12", "3.11", "3.10", "3.9", "3.8"]
+
+[env_run_base]
+description = "run unit tests"
+deps = [
+    "pytest>=8",
+]
+
+commands = [["pytest", { replace = "posargs", default = ["tests"], extend = true }]]
