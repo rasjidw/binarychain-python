@@ -1,0 +1,10 @@
+{
+    "urls": [
+        ["binarychain.py", "src/binarychain.py"]
+    ],
+    "deps": [
+        ["__future__", "latest"],
+        ["github:josverl/micropython-stubs/mip/typing.py", "main"]
+    ],
+    "version": "0.9.1"
+}
