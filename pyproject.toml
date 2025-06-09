@@ -1,7 +1,7 @@
 [project]
 name = "binarychain"
 description = "A simple but flexible binary container format, primarily meant for sending blocks of binary data over streaming interfaces like sockets. Similar to NetStrings, but for binary data."
-version = "0.9.0"
+version = "0.9.1"
 authors = [
  {name = "Rasjid Wilcox", email = "rasjidw@openminddev.net"}
  ]
