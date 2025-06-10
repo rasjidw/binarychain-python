@@ -1,6 +1,6 @@
 {
     "urls": [
-        ["binarychain.py", "src/binarychain.py"]
+        ["binarychain.py", "github:rasjidw/binarychain-python/src/binarychain.py"]
     ],
     "deps": [
         ["__future__", "latest"],
