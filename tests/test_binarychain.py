@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List
+from typing import List, Dict
 
 import pytest
 
@@ -19,7 +19,7 @@ def sample_chains():
     }
 
 
-def test_serialise(sample_chains: dict[str, BinaryChain]):
+def test_serialise(sample_chains: Dict[str, BinaryChain]):
     assert sample_chains["empty"].serialise() == b"\xFF"
     assert sample_chains["hello"].serialise() == b"Hello\x81\x05World\xFF"
     assert sample_chains["empty_part"].serialise() == b"Empty Part\x80\xFF"
@@ -29,7 +29,7 @@ def test_serialise(sample_chains: dict[str, BinaryChain]):
     )
 
 
-def test_deserialse_single(sample_chains: dict[str, BinaryChain]):
+def test_deserialise_single(sample_chains: Dict[str, BinaryChain]):
     reader = ChainReader(
         max_part_size=1024 * 1024, max_chain_size=1024 * 1024, max_chain_length=10
     )
@@ -43,7 +43,7 @@ def test_deserialse_single(sample_chains: dict[str, BinaryChain]):
         assert reader.complete()
 
 
-def split_into_groups(b: bytes, n: int) -> list[bytes]:
+def split_into_groups(b: bytes, n: int) -> List[bytes]:
     """
     Splits a string into groups of `n` consecutive bytes.
     """
@@ -55,7 +55,7 @@ def split_into_groups(b: bytes, n: int) -> list[bytes]:
     return [b[i : i + n] for i in range(0, len(b), n)]
 
 
-def test_deserialise_multiple(sample_chains: dict[str, BinaryChain]):
+def test_deserialise_multiple(sample_chains: Dict[str, BinaryChain]):
     empty = sample_chains["empty"]
     hello = sample_chains["hello"]
     empty_part = sample_chains["empty_part"]
@@ -75,7 +75,7 @@ def test_deserialise_multiple(sample_chains: dict[str, BinaryChain]):
         if char == EOC_ORD:
             eot_indexes.append(index + 1)
 
-    # now with chuncks of data, sizes 1 to 20 bytes
+    # now with chunks of data, sizes 1 to 20 bytes
     for chunk_size in range(1, 20):
         chunks = split_into_groups(data, chunk_size)
         print("---------------")
