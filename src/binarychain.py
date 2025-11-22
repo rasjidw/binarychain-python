@@ -71,7 +71,7 @@ def create_part_length(length_of_part: int):
 
 
 class BinaryChain:
-    def __init__(self, prefix: str = "", parts: Optional[list[bytes]] = None):
+    def __init__(self, prefix: str = "", parts: Optional[List[bytes]] = None):
         self.prefix = prefix
         self.parts = [] if parts is None else parts
 
