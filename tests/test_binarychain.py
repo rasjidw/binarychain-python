@@ -8,7 +8,7 @@ from binarychain import BinaryChain, ChainReader, ZERO_SOP_ORD, EOC_ORD, BYTE_LE
 
 
 @pytest.fixture
-def sample_chains():
+def sample_chains() -> Dict[str, BinaryChain]:
     return {
         "empty": BinaryChain(),
         "hello": BinaryChain("Hello", ["World".encode("ascii")]),
@@ -66,7 +66,7 @@ def test_deserialise_multiple(sample_chains: Dict[str, BinaryChain]):
     reader = ChainReader(
         max_part_size=1024 * 1024, max_chain_size=1024 * 1024, max_chain_length=10
     )
-    back_again = [bc for bc in reader.get_binary_chains(data)]
+    back_again: List[BinaryChain] = [bc for bc in reader.get_binary_chains(data)]
     assert chains == back_again
 
     # get the EOT positions
@@ -83,7 +83,7 @@ def test_deserialise_multiple(sample_chains: Dict[str, BinaryChain]):
         reader = ChainReader(
             max_part_size=1024 * 1024, max_chain_size=1024 * 1024, max_chain_length=10
         )
-        back_again: List[BinaryChain] = list()
+        back_again = list()
         pos = 0
         for chunk in chunks:
             for bc in reader.get_binary_chains(chunk):
