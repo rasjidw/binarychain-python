@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import Optional, Any, List
+from typing import Optional, Any, List, Generator
 
 """
 A binary chain consists of a prefix, which is an ascii string (strictly byte of value 0x7F and under)
 plus zero or more binary parts.
 
-Each binary part starts with a SOP byte (0x80 to 0x88), the binary part length (big endian encoded), and then the actual data.
+Each binary part starts with a SOP byte (0x80 to 0x88), the binary part length (big endian encoded), and then the
+actual data.
 
 The number of bytes in the binary part length is indicated by the SOP byte.
 0x80 indicates 0 bytes - implying that the length of the binary part is 0.
@@ -32,7 +33,7 @@ EOC = bytes([EOC_ORD])
 
 
 class EndOfChainMarkerCls:
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<EndOfChainMarker>"
 
 
@@ -52,7 +53,7 @@ BYTE_LENGTHS_MAP = [
 MAX_LENGTH_SIZE = BYTE_LENGTHS_MAP[-1][0]
 
 
-def create_part_length(length_of_part: int):
+def create_part_length(length_of_part: int) -> bytes:
     assert isinstance(length_of_part, int)
     if length_of_part < 0:
         raise ValueError("out of range - part_length must be non-negative")
@@ -71,31 +72,31 @@ def create_part_length(length_of_part: int):
 
 
 class BinaryChain:
-    def __init__(self, prefix: str = "", parts: Optional[List[bytes]] = None):
+    def __init__(self, prefix: str = "", parts: Optional[List[bytes|bytearray]] = None):
         self.prefix = prefix
         self.parts = [] if parts is None else parts
 
     def serialise(self) -> bytes:
         b_prefix = self.prefix.encode("ascii")
-        b_parts = [b_prefix]
+        b_parts: List[bytes|bytearray] = [b_prefix]
         for part in self.parts:
             b_parts.extend([create_part_length(len(part)), part])
         return b"".join(b_parts) + EOC
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, BinaryChain):
             return self.prefix == other.prefix and self.parts == other.parts
         else:
             return False
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"BinaryChain({repr(self.prefix)}, {repr(self.parts)})"
 
-    def __str__(self):
+    def __str__(self) -> str:
         prefix_str = (
             self.prefix if len(self.prefix) <= 100 else self.prefix[:100] + "..."
         )
-        parts: List[bytes] = list()
+        parts: List[bytes|bytearray] = list()
         for part in self.parts[:10]:
             if len(part) <= 10:
                 parts.append(part)
@@ -115,7 +116,8 @@ class StreamingChainReader:
     IN_PART_LENGTH = "IN_PART_LENGTH"
     IN_BINARY_PART = "IN_BINARY_PART"
 
-    def __init__(self, max_part_size: int, max_chain_size: Optional[int] = None, max_chain_length: Optional[int] = None):
+    def __init__(self, max_part_size: int, max_chain_size: Optional[int] = None,
+                 max_chain_length: Optional[int] = None):
         if max_part_size <= 0:
             raise ValueError("max part size must be positive")
         self.max_part_size = max_part_size
@@ -125,12 +127,12 @@ class StreamingChainReader:
         self._state = self.IN_PREFIX
         self._buffer = bytearray()
         self._current_prefix_offset = 0
-        self._part_length_size = None  # unknown
-        self._binary_part_length = None  # unknown
+        self._part_length_size: int|None = None  # None = unknown
+        self._binary_part_length: int|None = None  # None = unknown
         self._chain_size = 0
         self._chain_length = -1  # don't count the prefix
 
-    def get_chain_items(self, incoming_data: bytes):
+    def get_chain_items(self, incoming_data: bytes) -> Generator[str|bytes|bytearray|EndOfChainMarkerCls]:
         if not incoming_data:
             raise ValueError("incoming data must not be empty")
 
@@ -153,10 +155,10 @@ class StreamingChainReader:
                 self._chain_size = 0
                 self._chain_length = -1  # don't count the prefix
 
-    def complete(self):
+    def complete(self) -> bool:
         return self._state == self.IN_PREFIX and not self._buffer
 
-    def _set_state_and_part_length_size_from_sop(self, sop_byte: int):
+    def _set_state_and_part_length_size_from_sop(self, sop_byte: int) -> bool:
         if sop_byte == EOC_ORD:
             self._part_length_size = None
             self._state = self.IN_PREFIX
@@ -172,12 +174,12 @@ class StreamingChainReader:
         else:
             raise ParseError("Invalid start of part byte")
 
-    def _get_next_part(self):
+    def _get_next_part(self) -> tuple[None|str|bytes|bytearray, bool]:
         if self._state is self.IN_PREFIX:
             return self._get_prefix()
         elif self._state is self.IN_PART_LENGTH:
             self._read_part_length()  # Note: this can change the self._state
-            if self._state is self.IN_BINARY_PART:  # type: ignore
+            if self._state is self.IN_BINARY_PART:
                 return self._get_binary_part()
             else:
                 return None, False
@@ -186,7 +188,7 @@ class StreamingChainReader:
         else:
             raise RuntimeError("Invalid state")
 
-    def _get_prefix(self):
+    def _get_prefix(self) -> tuple[str|None, bool]:
         for index in range(self._current_prefix_offset, len(self._buffer)):
             byte = self._buffer[index]
             if byte >= ZERO_SOP_ORD:
@@ -196,7 +198,7 @@ class StreamingChainReader:
                 return prefix, at_end
         return None, False
 
-    def _read_part_length(self):
+    def _read_part_length(self) -> None:
         buffer_len = len(self._buffer)
         if not self._part_length_size:
             raise RuntimeError("Invalid call")
@@ -210,7 +212,7 @@ class StreamingChainReader:
                 raise ParseError("Part length too long")
         return
 
-    def _get_binary_part(self):
+    def _get_binary_part(self) -> tuple[bytes|bytearray|None, bool]:
         if self._binary_part_length is None:
             raise RuntimeError('Invalid call when binary_part_length is None')
         buffer_len = len(self._buffer)
@@ -240,7 +242,7 @@ class ChainReader:
         )
         self._bc = BinaryChain()
 
-    def get_binary_chains(self, incoming_data: bytes):
+    def get_binary_chains(self, incoming_data: bytes) -> Generator[BinaryChain]:
         for item in self.streaming_chain_reader.get_chain_items(incoming_data):
             if isinstance(item, str):
                 self._bc.prefix = item
@@ -253,5 +255,5 @@ class ChainReader:
             else:
                 RuntimeError("Invalid item type")
 
-    def complete(self):
+    def complete(self) -> bool:
         return self.streaming_chain_reader.complete()
