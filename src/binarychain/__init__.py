@@ -74,7 +74,7 @@ def create_part_length(length_of_part: int) -> bytes:
 class BinaryChain:
     def __init__(self, prefix: str = "", parts: Optional[List[bytes|bytearray]] = None):
         self.prefix = prefix
-        self.parts = [] if parts is None else parts
+        self.parts: List[bytes|bytearray] = [] if parts is None else parts
 
     def serialise(self) -> bytes:
         b_prefix = self.prefix.encode("ascii")
