@@ -14,7 +14,7 @@ data.
 
 The number of bytes in the binary part length is indicated by the SOP byte.
  * 0x80 indicates 0 bytes - implying that the length of the binary part is 0. In this case there are no binary part
- * length bytes, and the data for that part of the chain is of zero length.
+   length bytes, and the data for that part of the chain is of zero length.
  * 0x81 indicates a 1 byte part length - implying that the length of the binary part is between 1 and 255 bytes.
  * 0x82 indicates a 2 byte part length - implying that the length of the binary part is between 256 (0x0100) and
    65535 (0xFFFF) bytes.
