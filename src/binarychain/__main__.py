@@ -62,13 +62,13 @@ def encode(args):
 
 
 def _binary_chain_to_files(binary_chain: binarychain.BinaryChain, filename_prefix: str, output_dir: str):
-    filename = f'{filename_prefix}-prefix.txt'
+    filename = f'{filename_prefix}-asc-prefix.txt'
     filepath = os.path.join(output_dir, filename)
     with open(filepath, 'w') as f:
         f.write(binary_chain.prefix)
 
     for index, part_data in enumerate(binary_chain.parts):
-        filename = f'{filename_prefix}-part-{index}.data'
+        filename = f'{filename_prefix}-bin-part-{index}.data'
         filepath = os.path.join(output_dir, filename)
         with open(filepath, 'wb') as f:
             f.write(part_data)
@@ -98,7 +98,7 @@ def decode(args):
             print(f'Chain {index+1}')
             print(f'Prefix: "{chain.prefix}"')
             if chain.parts:
-                for part_index, part in chain.parts:
+                for part_index, part in enumerate(chain.parts):
                     print(f'Part {part_index}')
                     display_binary(part, LINE_LENGTH)
             else:
