@@ -119,12 +119,13 @@ class StreamingChainReader:
     IN_BINARY_PART = "IN_BINARY_PART"
 
     def __init__(self, max_part_size: int, max_chain_size: Optional[int] = None,
-                 max_chain_length: Optional[int] = None):
+                 max_chain_length: Optional[int] = None, max_prefix_size: Optional[int] = None):
         if max_part_size <= 0:
             raise ValueError("max part size must be positive")
         self.max_part_size = max_part_size
         self.max_chain_size = max_chain_size
         self.max_chain_length = max_chain_length
+        self.max_prefix_size = max_prefix_size
 
         self._state = self.IN_PREFIX
         self._buffer = bytearray()
@@ -193,6 +194,8 @@ class StreamingChainReader:
     def _get_prefix(self) -> tuple[str|None, bool]:
         for index in range(self._current_prefix_offset, len(self._buffer)):
             byte = self._buffer[index]
+            if self.max_prefix_size is not None and index > self.max_prefix_size:
+                raise ParseError("Prefix too long")
             if byte >= ZERO_SOP_ORD:
                 prefix = self._buffer[:index].decode("ascii")
                 at_end = self._set_state_and_part_length_size_from_sop(byte)
