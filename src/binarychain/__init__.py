@@ -139,15 +139,16 @@ class StreamingChainReader:
         if not incoming_data:
             raise ValueError("incoming data must not be empty")
 
+        self._chain_size += len(incoming_data)
+        if self.max_chain_size and self._chain_size > self.max_chain_size:
+            raise ParseError("chain size too big")
+
         self._buffer.extend(incoming_data)
         while True:
             part, at_end = self._get_next_part()
             if part is None:
                 return
-            self._chain_size += len(part)
             self._chain_length += 1
-            if self.max_chain_size and self._chain_size > self.max_chain_size:
-                raise ParseError("chain size too big")
             if self.max_chain_length and self._chain_length > self.max_chain_length:
                 raise ParseError(
                     f"chain too long: length of {self._chain_length} > {self.max_chain_length}"
