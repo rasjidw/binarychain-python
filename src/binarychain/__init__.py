@@ -73,6 +73,8 @@ def create_part_length(length_of_part: int) -> bytes:
 
 class BinaryChain:
     def __init__(self, prefix: str = "", parts: Optional[List[bytes|bytearray]] = None):
+        if not prefix.isascii():
+            raise ValueError('Prefix must be an ascii string')
         self.prefix = prefix
         self.parts: List[bytes|bytearray] = [] if parts is None else parts
 
